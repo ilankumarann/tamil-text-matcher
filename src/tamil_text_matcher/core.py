@@ -1,4 +1,5 @@
 from typing import List, Dict, Union, Tuple, Optional
+import re
 from rapidfuzz import distance, fuzz
 from .encoder import TamilPhoneticEncoder
 
@@ -25,9 +26,29 @@ def compare(s1: str, s2: str, threshold: int = 80) -> Dict[str, Union[bool, int,
     if not s1 or not s2:
         return {'match': False, 'score': 0, 'method': 'none'}
 
+    # Step 0: Input Normalization
+    # Convert to lower, strip whitespace, and replace special chars with space
+    # (Preserving spaces is important for token_set_ratio)
+    def clean(text):
+        if not text: return ""
+        text = text.lower()
+        # Replace non-alphanumeric with space
+        text = re.sub(r'[^a-z0-9\s]', ' ', text)
+        # Collapse multiple spaces
+        text = re.sub(r'\s+', ' ', text).strip()
+        return text
+
+    s1_clean = clean(s1)
+    s2_clean = clean(s2)
+    
+    if not s1_clean or not s2_clean:
+         return {'match': False, 'score': 0, 'method': 'none'}
+
     # Step 1: Phonetic Encoding
-    enc_s1 = _encoder.encode(s1)
-    enc_s2 = _encoder.encode(s2)
+    # encoder.encode handles its own cleaning (stripping non-alpha), so passing s1/s1_clean is fine.
+    # We pass s1_clean for consistency, though encoder removes spaces anyway.
+    enc_s1 = _encoder.encode(s1_clean)
+    enc_s2 = _encoder.encode(s2_clean)
     
     if enc_s1 and enc_s1 == enc_s2:
         return {'match': True, 'score': 100.0, 'method': 'encoded_exact'}
@@ -39,17 +60,16 @@ def compare(s1: str, s2: str, threshold: int = 80) -> Dict[str, Union[bool, int,
         return {'match': True, 'score': jw_score, 'method': 'phonetic_jw'}
         
     # Step 3: Fallback - Token/Partial Matching (Original Strings)
-    # This handles "R. Ravi" vs "Ravi" where phonetic might differ 
-    # (e.g. 'rravi' vs 'ravi' or 'arravi' if sounded out, but token set handles it best).
+    # Use cleaned strings (lowercase, space-normalized)
     
     # token_set_ratio: Intersection of tokens. Good for "Senthil Kumar" vs "Kumar Senthil"
-    token_set = fuzz.token_set_ratio(s1, s2)
+    token_set = fuzz.token_set_ratio(s1_clean, s2_clean)
     
     # token_sort_ratio: Sorted tokens. Good for "Senthil Kumar" vs "Kumar Senthil"
-    token_sort = fuzz.token_sort_ratio(s1, s2)
+    token_sort = fuzz.token_sort_ratio(s1_clean, s2_clean)
     
     # partial_ratio: Substring matching. Good for "Senthil" vs "Senthil Kumar"
-    partial = fuzz.partial_ratio(s1, s2)
+    partial = fuzz.partial_ratio(s1_clean, s2_clean)
     
     max_fuzzy = max(token_set, token_sort, partial)
     

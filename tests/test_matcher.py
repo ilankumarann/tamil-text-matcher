@@ -81,3 +81,52 @@ class TestMatcher:
         match = find_best_match("Kartik", candidates)
         assert match is not None
         assert match[0] == "Karthik" 
+
+    def test_input_normalization(self):
+        """Tests for verify_norm.py cases"""
+        cases = [
+            ("  Barathi ", "Barathi"),  # Spaces
+            ("Barathi.", "Barathi"),    # Special char
+            ("BARATHI", "barathi"),     # Case
+            ("Ram-Kumar", "Ram Kumar"), # Special char to space
+            ("Senthil@Kumar", "Senthil Kumar"), # Special char
+        ]
+        
+        for s1, s2 in cases:
+            res = compare(s1, s2)
+            assert res['match'] is True
+            assert res['score'] == 100
+
+    def test_l_and_zh_mappings(self):
+        """Tests for check_l.py cases"""
+        # "Palli" vs "Pali" (School)
+        res = compare("Palli", "Pali")
+        assert res['match'] is True
+        assert res['score'] == 100
+        
+        # "Palli" vs "Balli" (Lizard - but phonetically 'balli' -> 'palli')
+        res = compare("Palli", "Balli")
+        assert res['match'] is True
+        assert res['score'] == 100
+
+        # "Muthu" vs "Mudu" (Check d->t)
+        res = compare("Muthu", "Mudu")
+        assert res['match'] is True
+        assert res['score'] == 100
+        
+        # "Tamizh" vs "Tamil"
+        # Currently z maps to s, so 'tanis' vs 'tanil'. Score ~92.
+        # This confirms current behavior, even if we discuss changing it later.
+        res = compare("Tamizh", "Tamil")
+        assert res['match'] is True
+        assert res['score'] >= 80
+
+        # "Mazhai" vs "Malai"
+        res = compare("Mazhai", "Malai")
+        assert res['match'] is True
+        assert res['score'] >= 80
+
+        # "Pazham" vs "Palam"
+        res = compare("Pazham", "Palam")
+        assert res['match'] is True
+        assert res['score'] >= 80
