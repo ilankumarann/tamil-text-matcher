@@ -60,10 +60,19 @@ def compare(s1: str, s2: str, threshold: int = 80) -> Dict[str, Union[bool, int,
         
     # Step 2: Jaro-Winkler on Phonetic Strings
     # rapidfuzz.distance.JaroWinkler.similarity returns 0.0-1.0, we want 0-100
+    # Step 2: Jaro-Winkler on Phonetic Strings
+    # rapidfuzz.distance.JaroWinkler.similarity returns 0.0-1.0, we want 0-100
     jw_score = distance.JaroWinkler.similarity(enc_s1, enc_s2) * 100
+    
+    # Store potential result
+    best_res = {'match': False, 'score': 0, 'method': 'none'}
+    
     if jw_score >= threshold:
-        return {'match': True, 'score': jw_score, 'method': 'phonetic_jw'}
-        
+        best_res = {'match': True, 'score': jw_score, 'method': 'phonetic_jw'}
+        # If perfect match found, return immediately
+        if jw_score == 100.0:
+            return best_res
+
     # Step 3: Fallback - Token/Partial Matching (Original Strings)
     # Use cleaned strings (lowercase, space-normalized)
     
@@ -73,17 +82,22 @@ def compare(s1: str, s2: str, threshold: int = 80) -> Dict[str, Union[bool, int,
     # token_sort_ratio: Sorted tokens. Good for "Senthil Kumar" vs "Kumar Senthil"
     token_sort = fuzz.token_sort_ratio(s1_clean, s2_clean)
     
-    # partial_ratio: Substring matching. Good for "Senthil" vs "Senthil Kumar"
-    partial = fuzz.partial_ratio(s1_clean, s2_clean)
+    # partial_ratio REMOVED: potentially dangerous for names (e.g. "Harini" vs "Bhavatharini" -> 100)
+    # token_set handles "Senthil" vs "Senthil Kumar" properly.
     
-    max_fuzzy = max(token_set, token_sort, partial)
+    max_fuzzy = max(token_set, token_sort)
     
-    if max_fuzzy >= threshold:
+    # Use fuzzy token score if it's better than phonetic score and meets threshold
+    if max_fuzzy >= threshold and max_fuzzy > best_res['score']:
          return {'match': True, 'score': float(max_fuzzy), 'method': 'fuzzy_token'}
+    
+    # Return whatever we found (either phonetic match or no match)
+    if best_res['match']:
+        return best_res
          
     # Return best score found even if no match
-    best_score = max(jw_score, float(max_fuzzy))
-    return {'match': False, 'score': best_score, 'method': 'none'}
+    overall_best = max(jw_score, float(max_fuzzy))
+    return {'match': False, 'score': overall_best, 'method': 'none'}
 
 def find_best_match(query: str, candidates: List[str], threshold: int = 80) -> Optional[Tuple[str, float, str]]:
     """

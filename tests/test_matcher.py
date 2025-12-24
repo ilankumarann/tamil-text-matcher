@@ -151,3 +151,20 @@ class TestMatcher:
             assert res['score'] < 60
         else:
             assert res['match'] is False
+
+    def test_substring_false_positives(self):
+        # "Bhavatharini" vs "Harini"
+        # Previously matched 100% due to partial_ratio. Should now be low.
+        res = compare("Bhavatharini", "Harini")
+        # Harini is distinct from Bhavatharini
+        if res['match']:
+            # If it matches, score should be low (< 80 ideally)
+            assert res['score'] < 70
+        else:
+            assert res['match'] is False
+            
+    def test_substring_valid_matches(self):
+        # "Senthil" vs "Senthil Kumar" -> Should still match via token_set_ratio
+        res = compare("Senthil", "Senthil Kumar")
+        assert res['match'] is True
+        assert res['score'] == 100.0
