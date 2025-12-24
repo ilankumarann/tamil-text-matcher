@@ -1,0 +1,20 @@
+[build-system]
+requires = ["setuptools>=42", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "tamil-text-matcher"
+version = "0.1.0"
+description = "A library to compare transliterated Tamil strings using phonetic encoding and fuzzy matching."
+authors = [
+    {name = "Ilankumaran N", email = "nilanku@gmail.com"},
+]
+dependencies = [
+    "rapidfuzz>=3.0.0",
+]
+requires-python = ">=3.7"
+
+[project.optional-dependencies]
+test = [
+    "pytest",
+]

@@ -1,0 +1,9 @@
+Metadata-Version: 2.4
+Name: tamil-text-matcher
+Version: 0.1.0
+Summary: A library to compare transliterated Tamil strings using phonetic encoding and fuzzy matching.
+Author-email: User <user@example.com>
+Requires-Python: >=3.7
+Requires-Dist: rapidfuzz>=3.0.0
+Provides-Extra: test
+Requires-Dist: pytest; extra == "test"

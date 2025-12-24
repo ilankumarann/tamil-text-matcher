@@ -1,0 +1,11 @@
+pyproject.toml
+setup.py
+src/tamil_text_matcher/__init__.py
+src/tamil_text_matcher/core.py
+src/tamil_text_matcher/encoder.py
+src/tamil_text_matcher.egg-info/PKG-INFO
+src/tamil_text_matcher.egg-info/SOURCES.txt
+src/tamil_text_matcher.egg-info/dependency_links.txt
+src/tamil_text_matcher.egg-info/requires.txt
+src/tamil_text_matcher.egg-info/top_level.txt
+tests/test_matcher.py
