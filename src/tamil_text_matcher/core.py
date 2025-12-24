@@ -32,6 +32,11 @@ def compare(s1: str, s2: str, threshold: int = 80) -> Dict[str, Union[bool, int,
     def clean(text):
         if not text: return ""
         text = text.lower()
+        
+        # Remove common titles
+        # Must be at start of string, followed by space or optional dot then space
+        text = re.sub(r'^(dr|mr|mrs|miss|er)\.?\s+', '', text)
+        
         # Replace non-alphanumeric with space
         text = re.sub(r'[^a-z0-9\s]', ' ', text)
         # Collapse multiple spaces

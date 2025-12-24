@@ -130,3 +130,24 @@ class TestMatcher:
         res = compare("Pazham", "Palam")
         assert res['match'] is True
         assert res['score'] >= 80
+
+    def test_title_removal_and_false_positives(self):
+        # "Dr. Ravi" vs "Ravi" - Should be exact match after stripping "Dr."
+        res = compare("Dr. Ravi", "Ravi")
+        assert res['match'] is True
+        assert res['score'] == 100.0
+        assert res['method'] == 'encoded_exact'
+
+        # "Dr Kalyan" vs "T. L. Maharajan"
+        # Previously matched because 'Dr' -> 'tl' matched 'T. L.' -> 'tl'
+        # Now 'Dr' is stripped -> "Kalyan" vs "T. L. Maharajan"
+        # "Kalyan" (kalan) vs "Maharajan" (nahalasan) -> Should be low score
+        res = compare("Dr Kalyan", "T. L. Maharajan")
+        # We assert it does NOT match or score is low
+        # Note: If threshold is 80, this should now be False.
+        if res['match']:
+            # If it still matches, score should be significantly lower than before (84)
+            # But realistically it shouldn't match.
+            assert res['score'] < 60
+        else:
+            assert res['match'] is False

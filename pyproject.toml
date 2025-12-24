@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "tamil-text-matcher"
-version = "0.1.0"
+version = "0.1.1"
 description = "A library to compare transliterated Tamil strings using phonetic encoding and fuzzy matching."
 authors = [
     {name = "Ilankumaran N", email = "nilanku@gmail.com"},
