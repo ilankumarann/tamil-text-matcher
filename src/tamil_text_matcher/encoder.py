@@ -32,9 +32,22 @@ class TamilPhoneticEncoder:
         text = text.replace("oo", "O")
         text = text.replace("uu", "U")
         
-        # 2. Handle Equivalence Mappings (v:w, z:s)
+        text = text.replace("uu", "U")
+        
+        # 1.5 Special Tamil Mappings (zh -> l, z -> l)
+        # 'zh' (ழ்) is often transliterated as 'l' or 'z'.
+        # Map them all to 'l' to ensure "Tamizh" == "Tamil".
+        # Must be done BEFORE 'z'->'s' or 'h' removal.
+        text = text.replace("zh", "l")
+        text = text.replace("z", "l")
+        
+        # 2. Handle Equivalence Mappings (v:w)
         text = text.replace("w", "v")
-        text = text.replace("z", "s")
+        # 'z' is already handled above, so z->s is effectively skipped for z, 
+        # but kept if any 'z' remains (unlikely) or for other s variants? 
+        # Actually 'z' -> 's' was for generic phonetic. For Tamil context 'z' is usually 'zh'.
+        # We can remove z->s or leave it as fallback.
+        text = text.replace("z", "s") # Fallback if any z left
         
         # 3. Silent 'h'
         # Removing 'h' handles 'bh'->'b', 'th'->'t', 'dh'->'d', 'sh'->'s' etc.
@@ -56,7 +69,11 @@ class TamilPhoneticEncoder:
         
         # 5. Grouping Nasals and Liquids (as per "nasals like mn", "liquids like lr")
         # This reduces precision but increases fuzzy match recall for these confusion points.
-        text = text.replace("m", "n") 
+        # User Feedback: m and n should be distinct (Neelamegam vs Neelamegan).
+        # But 'mn' should be treated as 'n'.
+        text = text.replace("mn", "n") 
+        # m remains m. n remains n.
+        
         text = text.replace("r", "l")
         
         # 6. Squeeze Repeats

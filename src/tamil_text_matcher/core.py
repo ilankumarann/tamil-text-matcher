@@ -5,7 +5,7 @@ from .encoder import TamilPhoneticEncoder
 
 _encoder = TamilPhoneticEncoder()
 
-def compare(s1: str, s2: str, threshold: int = 80) -> Dict[str, Union[bool, int, float, str]]:
+def compare(s1: str, s2: str, threshold: int = 80, use_jw: bool = False) -> Dict[str, Union[bool, int, float, str]]:
     """
     Compares two transliterated Tamil strings using a multi-stage approach.
     
@@ -63,12 +63,15 @@ def compare(s1: str, s2: str, threshold: int = 80) -> Dict[str, Union[bool, int,
     # Step 2: Jaro-Winkler on ORIGINAL Normalized Strings
     # User feedback: Phonetic JW is too enthusiastic.
     # JW on original strings handles typos (e.g. Tamizh vs Tamil) better.
-    jw_score = distance.JaroWinkler.similarity(s1_clean, s2_clean) * 100
+    # OPTIONAL: Only run if use_jw is True
+    jw_score = 0
+    if use_jw:
+        jw_score = distance.JaroWinkler.similarity(s1_clean, s2_clean) * 100
     
     # Store potential result
     best_res = {'match': False, 'score': 0, 'method': 'none'}
     
-    if jw_score >= threshold:
+    if use_jw and jw_score >= threshold:
         best_res = {'match': True, 'score': jw_score, 'method': 'jaro_winkler'}
         # If perfect match found, return immediately
         if jw_score == 100.0:
@@ -100,7 +103,7 @@ def compare(s1: str, s2: str, threshold: int = 80) -> Dict[str, Union[bool, int,
     overall_best = max(jw_score, float(max_fuzzy))
     return {'match': False, 'score': overall_best, 'method': 'none'}
 
-def find_best_match(query: str, candidates: List[str], threshold: int = 80) -> Optional[Tuple[str, float, str]]:
+def find_best_match(query: str, candidates: List[str], threshold: int = 80, use_jw: bool = False) -> Optional[Tuple[str, float, str]]:
     """
     Finds the best match for a query string from a list of candidates.
     
@@ -116,7 +119,7 @@ def find_best_match(query: str, candidates: List[str], threshold: int = 80) -> O
     best_result = {'score': -1, 'match': False}
     
     for candidate in candidates:
-        result = compare(query, candidate, threshold)
+        result = compare(query, candidate, threshold, use_jw=use_jw)
         if result['score'] > best_result['score']:
             best_result = result
             best_candidate = candidate

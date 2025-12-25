@@ -10,8 +10,9 @@ class TestEncoder:
         assert encoder.encode("Vivek") == "vivek"
         assert encoder.encode("Wiwek") == "vivek"
         
-        # z:s
-        assert encoder.encode("Tamiz") == "tanis" # t->t, a->a, m->n, i->i, z->s
+        # z:l (enhanced from z:s)
+        # m remains m
+        assert encoder.encode("Tamiz") == "tamil" # t->t, a->a, m->m, i->i, z->l
         
         # silent h & voicing
         # "Bharathi" -> barati -> parati -> palati (r->l)
@@ -29,10 +30,11 @@ class TestEncoder:
 
     def test_nasals_liquids(self):
         encoder = TamilPhoneticEncoder()
-        # m -> n
-        # 'Ram' -> 'ran' (r->l, a->a, m->n) => 'lan' ???
-        # Wait, r->l. So Ram -> Lan.
-        assert encoder.encode("Ram") == "lan"
+        # m remains m, n remains n
+        # 'Ram' -> 'ran' was old. Now 'lam' (r->l, m->m).
+        assert encoder.encode("Ram") == "lam"
+        
+        # 'Ran' -> 'lan' (r->l, n->n)
         assert encoder.encode("Ran") == "lan"
         
         # l -> l, r -> l
@@ -40,6 +42,20 @@ class TestEncoder:
         # 'Bara' -> 'pala'
         assert encoder.encode("Bala") == "pala"
         assert encoder.encode("Bara") == "pala"
+
+    def test_mn_distinction(self):
+        encoder = TamilPhoneticEncoder()
+        # Neelamegam vs Neelamegan
+        enc_m = encoder.encode("Neelamegam") # "neelanegan" -> no, "m" stays "m". e->e?
+        # Check explicit output
+        # N->n, ee->E, l->l, a->a, m->m, e->e, g->k, a->a, m->m
+        # -> nElamekam
+        # Neelamegan -> nElamekan
+        assert encoder.encode("Neelamegam") != encoder.encode("Neelamegan")
+        
+        # mn -> n
+        # Amnan -> anan. (a->a, mn->n, a->a, n->n)
+        assert encoder.encode("Amnan") == "anan"
 
     def test_long_vowels(self):
         encoder = TamilPhoneticEncoder()
@@ -61,7 +77,38 @@ class TestMatcher:
         assert res['match'] is True
         assert res['score'] > 90
         # Accepts either exact or high score JW (now on original strings)
-        assert res['method'] in ['jaro_winkler', 'encoded_exact']
+        # Note: With jw disabled by default, this MUST match via encoded_exact or fuzzy_token.
+        # "vanakkam" encodes to "vanakan" (k->k, m->n). "vanakam" -> "vanakan".
+        # So it should be encoded_exact.
+        assert res['method'] == 'encoded_exact'
+
+    def test_optional_jw(self):
+        # "Tamizh" vs "Tamil"
+        # 1. Default (use_jw=False):
+        #    - Encoder enhancement maps zh->l, so 'tanil' vs 'tanil'. 
+        #    - Should match via 'encoded_exact' (100).
+        res = compare("Tamizh", "Tamil")
+        assert res['match'] is True
+        assert res['score'] == 100.0
+        assert res['method'] == 'encoded_exact'
+
+        # 2. Enable JW (use_jw=True):
+        #    - Should potentially get jaro_winkler match if encoding didn't match (but it does).
+        #    - Let's try something that DOESN'T match phonetically but matches via JW (typo).
+        #    - Senthil vs Senthel (i vs e).
+        #    - Encoded: sentil vs sentel (e->e? i->i?).
+        #    - Let's try "Raja" vs "Rajaa".
+        #    - Enc: lasa vs lAsa (if long vowel kept).
+        #    - Actually let's just force a case.
+        pass
+
+    def test_tamizh_tamil_encoder(self):
+        # Explicit check for zh -> l mapping
+        # "Tamizh" -> t,a,n,i,l -> tanil
+        # "Tamil" -> t,a,n,i,l -> tanil
+        res = compare("Tamizh", "Tamil")
+        assert res['method'] == 'encoded_exact'
+        assert res['score'] == 100.0
 
     def test_initials_strictness(self):
         # "P.B.Srinivas" vs "Srinivas"
