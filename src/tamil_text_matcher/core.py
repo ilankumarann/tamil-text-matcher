@@ -60,15 +60,16 @@ def compare(s1: str, s2: str, threshold: int = 80) -> Dict[str, Union[bool, int,
         
     # Step 2: Jaro-Winkler on Phonetic Strings
     # rapidfuzz.distance.JaroWinkler.similarity returns 0.0-1.0, we want 0-100
-    # Step 2: Jaro-Winkler on Phonetic Strings
-    # rapidfuzz.distance.JaroWinkler.similarity returns 0.0-1.0, we want 0-100
-    jw_score = distance.JaroWinkler.similarity(enc_s1, enc_s2) * 100
+    # Step 2: Jaro-Winkler on ORIGINAL Normalized Strings
+    # User feedback: Phonetic JW is too enthusiastic.
+    # JW on original strings handles typos (e.g. Tamizh vs Tamil) better.
+    jw_score = distance.JaroWinkler.similarity(s1_clean, s2_clean) * 100
     
     # Store potential result
     best_res = {'match': False, 'score': 0, 'method': 'none'}
     
     if jw_score >= threshold:
-        best_res = {'match': True, 'score': jw_score, 'method': 'phonetic_jw'}
+        best_res = {'match': True, 'score': jw_score, 'method': 'jaro_winkler'}
         # If perfect match found, return immediately
         if jw_score == 100.0:
             return best_res
