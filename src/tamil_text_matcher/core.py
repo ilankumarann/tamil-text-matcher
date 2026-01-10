@@ -5,7 +5,7 @@ from .encoder import TamilPhoneticEncoder
 
 _encoder = TamilPhoneticEncoder()
 
-def compare(s1: str, s2: str, threshold: int = 80, use_jw: bool = False) -> Dict[str, Union[bool, int, float, str]]:
+def compare(s1: str, s2: str, threshold: int = 80, use_jw: bool = False, partial_match_ok: bool = False) -> Dict[str, Union[bool, int, float, str]]:
     """
     Compares two transliterated Tamil strings using a multi-stage approach.
     
@@ -19,6 +19,8 @@ def compare(s1: str, s2: str, threshold: int = 80, use_jw: bool = False) -> Dict
         s1: First string.
         s2: Second string.
         threshold: Score threshold to consider a match (0-100).
+        use_jw: Use JaroWinkler similarity search
+        partial_match_ok: Partial matches are fine, use fuzz.token_set
         
     Returns:
         Dict containing 'match' (bool), 'score' (float), and 'method' (str).
@@ -89,7 +91,7 @@ def compare(s1: str, s2: str, threshold: int = 80, use_jw: bool = False) -> Dict
     # partial_ratio REMOVED: potentially dangerous for names (e.g. "Harini" vs "Bhavatharini" -> 100)
     # token_set handles "Senthil" vs "Senthil Kumar" properly.
     
-    max_fuzzy = max(token_set, token_sort)
+    max_fuzzy = max(token_set, token_sort) if partial_match_ok else token_sort
     
     # Use fuzzy token score if it's better than phonetic score and meets threshold
     if max_fuzzy >= threshold and max_fuzzy > best_res['score']:
